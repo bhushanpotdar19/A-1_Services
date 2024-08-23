@@ -13,7 +13,7 @@ const slotBookingSchema = new Schema({
     {
         type: Schema.Types.ObjectId,
         ref: 'ServiceProvider',
-        require:true
+        required:true
     },
     bookingDate:
     {

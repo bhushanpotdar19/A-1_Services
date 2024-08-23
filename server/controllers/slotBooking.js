@@ -1,54 +1,81 @@
 import SlotBook from "../models/SlotBooking.js";
+import User from "../models/User.js";
+import { ServiceProvider } from "../models/ServiceProvider.js";
 
 const postBookSlot = async (req, res) => {
-    const { user,serviceProvider, bookingDate, serviceDate, userAddress } = req.body
+    try {
+        const { user, serviceProvider, bookingDate, serviceDate, userAddress, description } = req.body;
 
-    const slotBook = new SlotBook({
-        user: user,
-        serviceProvider: serviceProvider,
-        bookingDate: bookingDate,
-        serviceDate: serviceDate,
-        userAddress: userAddress
-    })
+        // Validate required fields
+        if (!user || !serviceProvider || !serviceDate) {
+            return res.status(400).json({
+                success: false,
+                message: "Missing required fields"
+            });
+        }
 
-    const bookslot = await slotBook.save()
+        const slotBook = new SlotBook({
+            user: user,
+            serviceProvider: serviceProvider,
+            bookingDate: new Date(),
+            serviceDate: new Date(serviceDate), // Ensure serviceDate is parsed correctly
+            userAddress: userAddress,
+            description: description
+        });
 
-    if (bookslot)
+        const bookslot = await slotBook.save();
+
         res.status(201).json({
             success: true,
             message: "Slot booked successfully",
             data: bookslot
-        })
+        });
 
-
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Server error",
+            error: error.message
+        });
+    }
 }
 
-
 const getAllSlots = async (req, res) => {
-    const {id}  =  req.query
-    
-    if (!id){
-        return res.status(400).json({
-          success: false,
-            message: "Please provide id"})
+    try {
+        const { userId } = req.query;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "Please provide a userId"
+            });
         }
-    
-    const slotBook = await SlotBook.find({serviceProvider: id })
-    if (slotBook) {
+
+        const user = await ServiceProvider.findById(userId);
+        if (!user) {
+            return res.status(404).json({
+                success: false,
+                message: "ServiceProvider not found"
+            });
+        }
+
+        const slotbook = await SlotBook.find({ "serviceProvider": userId })
+            .populate('user') // Populate user details (adjust fields as needed)
+            
+
         res.status(200).json({
             success: true,
             message: "Slots found successfully",
-            data: slotBook
-        })
-    } else {
-        res.status(404).json({
+            data: slotbook
+        });
+
+    } catch (error) {
+        res.status(500).json({
             success: false,
-            message: "No slots found",
-            data: {}
-        })
+            message: "Server error",
+            error: error.message
+        });
+    }
+}
 
-
-
-    }}
-
-    export { postBookSlot , getAllSlots};
+export { postBookSlot, getAllSlots };
